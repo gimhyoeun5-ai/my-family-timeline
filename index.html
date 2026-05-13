@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>우리 가족 역사 연표 제작기</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root { --main-color: #ffcc00; --point-color: #ff6600; }
+        body { font-family: 'Malgun Gothic', sans-serif; background-color: #fff9e6; display: flex; flex-direction: column; align-items: center; padding: 20px; color: #333; }
+        
+        /* 설정 영역 */
+        .setup-box { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 20px; width: 700px; border: 3px solid var(--main-color); }
+        .input-group { margin: 10px 0; display: flex; align-items: center; gap: 10px; font-weight: bold; }
+        input, select { padding: 8px; border: 2px solid #ddd; border-radius: 8px; }
+        
+        /* 연표 캔버스 영역 */
+        #capture-area { background: white; padding: 60px 40px; border-radius: 25px; width: 750px; min-height: 850px; border: 1px solid #eee; position: relative; }
+        .title-area { text-align: center; margin-bottom: 50px; }
+        .title-area h1 { font-size: 2.8em; color: var(--point-color); margin: 0; border-bottom: 4px double var(--main-color); display: inline-block; padding-bottom: 5px; }
+        
+        .timeline-line { position: absolute; left: 150px; top: 180px; bottom: 80px; width: 6px; background: var(--main-color); border-radius: 3px; }
+        
+        .timeline-list { position: relative; z-index: 2; list-style: none; padding: 0; margin: 0; }
+        .item { display: flex; align-items: center; margin-bottom: 35px; min-height: 50px; transition: all 0.5s ease; }
+        
+        .year-side { width: 140px; text-align: right; padding-right: 35px; font-weight: bold; color: var(--point-color); font-size: 1.4em; position: relative; }
+        .year-side::after { content: ''; position: absolute; right: -12px; top: 50%; transform: translateY(-50%); width: 22px; height: 22px; background: white; border: 5px solid var(--point-color); border-radius: 50%; z-index: 3; }
+        
+        .content-side { flex: 1; padding-left: 30px; display: flex; align-items: center; gap: 10px; }
+        .age-tag { background: #ffeeba; padding: 4px 10px; border-radius: 12px; font-size: 0.9em; font-weight: bold; color: #d45d00; min-width: 45px; text-align: center; }
+        .event-text { font-size: 1.2em; border: none; border-bottom: 1px solid #eee; padding: 5px; flex: 1; outline: none; }
+        .emoji-select { font-size: 1.1em; padding: 5px; border-radius: 8px; border: 2px solid var(--main-color); cursor: pointer; }
+
+        /* 하단 제어 버튼 */
+        .controls { margin-top: 20px; display: flex; gap: 15px; }
+        .btn { padding: 12px 25px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-add { background: #4CAF50; color: white; }
+        .btn-save { background: var(--point-color); color: white; font-size: 1.1em; }
+        .btn:disabled { background: #ccc; cursor: not-allowed; }
+        .btn-del { border:none; background:none; cursor:pointer; font-size: 1.2em; color: #ff4444; }
+    </style>
+</head>
+<body>
+
+    <div class="setup-box">
+        <div class="input-group">
+            <span>내 이름:</span>
+            <input type="text" id="nameInput" placeholder="이름을 입력하세요" oninput="updateUI()">
+            <span>(연도 순서에 상관없이 입력하면 자동으로 정렬됩니다!)</span>
+        </div>
+    </div>
+
+    <div id="capture-area">
+        <div class="title-area">
+            <h1><span id="displayName">OOO</span>네 가족 연표</h1>
+        </div>
+        
+        <div class="timeline-line"></div>
+        <div id="timeline-list" class="timeline-list">
+            <!-- 항목들이 정렬되어 나타납니다 -->
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="btn btn-add" id="addBtn" onclick="addRow()">➕ 항목 추가하기 (최대 10개)</button>
+        <button class="btn btn-save" onclick="saveImage()">📸 사진 파일로 저장하기</button>
+    </div>
+
+    <script>
+        const timelineList = document.getElementById('timeline-list');
+        const emotions = [
+            { icon: "😊", label: "기쁨" }, { icon: "😭", label: "슬픔" },
+            { icon: "😡", label: "화남" }, { icon: "😮", label: "놀람" },
+            { icon: "🥰", label: "사랑" }, { icon: "😎", label: "뿌듯" },
+            { icon: "😰", label: "걱정" }, { icon: "😴", label: "평온" }
+        ];
+
+        let dataList = []; // 데이터를 저장할 리스트
+
+        function updateUI() {
+            document.getElementById('displayName').innerText = document.getElementById('nameInput').value || "OOO";
+        }
+
+        // 연표 항목 추가
+        function addRow() {
+            if (dataList.length >= 10) return;
+
+            const newItem = {
+                id: Date.now(),
+                year: 2026,
+                event: "",
+                emoji: "😊"
+            };
+
+            dataList.push(newItem);
+            renderTimeline();
+            checkBtn();
+        }
+
+        // 연표 다시 그리기 (정렬 포함)
+        function renderTimeline() {
+            // 연도 순서대로 정렬 (오름차순)
+            dataList.sort((a, b) => a.year - b.year);
+
+            timelineList.innerHTML = ""; // 기존 목록 비우기
+
+            dataList.forEach((item) => {
+                const row = document.createElement('div');
+                row.className = 'item';
+                
+                // 연도 선택 옵션 생성
+                let yearOptions = "";
+                for (let y = 2000; y <= 2026; y++) {
+                    let selected = (y === item.year) ? "selected" : "";
+                    yearOptions += `<option value="${y}" ${selected}>${y}년</option>`;
+                }
+
+                // 감정 선택 옵션 생성
+                let emotionOptions = emotions.map(e => `<option value="${e.icon}" ${item.emoji === e.icon ? 'selected' : ''}>${e.icon} ${e.label}</option>`).join('');
+
+                // 나이 계산
+                let ageHtml = "";
+                if (item.year >= 2017 && item.year <= 2026) {
+                    ageHtml = `<span class="age-tag">${item.year - 2017 + 1}살</span>`;
+                }
+
+                row.innerHTML = `
+                    <div class="year-side">
+                        <select onchange="updateItem(${item.id}, 'year', this.value)">${yearOptions}</select>
+                    </div>
+                    <div class="content-side">
+                        ${ageHtml}
+                        <input type="text" class="event-text" value="${item.event}" placeholder="소중한 일을 적어보세요" oninput="updateItem(${item.id}, 'event', this.value)">
+                        <select class="emoji-select" onchange="updateItem(${item.id}, 'emoji', this.value)">${emotionOptions}</select>
+                        <button class="btn-del" onclick="removeItem(${item.id})">🗑️</button>
+                    </div>
+                `;
+                timelineList.appendChild(row);
+            });
+        }
+
+        // 데이터 수정 시 호출
+        function updateItem(id, field, value) {
+            const item = dataList.find(d => d.id === id);
+            if (item) {
+                item[field] = (field === 'year') ? parseInt(value) : value;
+                if (field === 'year') {
+                    renderTimeline(); // 연도가 바뀌면 다시 정렬해서 그리기
+                }
+            }
+        }
+
+        // 항목 삭제
+        function removeItem(id) {
+            dataList = dataList.filter(d => d.id !== id);
+            renderTimeline();
+            checkBtn();
+        }
+
+        function checkBtn() {
+            document.getElementById('addBtn').disabled = (dataList.length >= 10);
+        }
+
+        function saveImage() {
+            const saveBtn = document.querySelector('.btn-save');
+            saveBtn.innerText = "이미지 생성 중...";
+            
+            html2canvas(document.querySelector("#capture-area"), {
+                backgroundColor: "#ffffff",
+                scale: 2
+            }).then(canvas => {
+                const link = document.createElement('a');
+                const name = document.getElementById('nameInput').value || '우리';
+                link.download = `${name}_네_가족_연표.png`;
+                link.href = canvas.toDataURL();
+                link.click();
+                saveBtn.innerText = "📸 사진 파일로 저장하기";
+            });
+        }
+
+        // 초기 항목 생성
+        addRow();
+    </script>
+</body>
+</html>
