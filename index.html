@@ -2,184 +2,438 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>우리 가족 역사 연표 제작기</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>우리 학교 역사 연표 제작기</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        :root { --main-color: #ffcc00; --point-color: #ff6600; }
-        body { font-family: 'Malgun Gothic', sans-serif; background-color: #fff9e6; display: flex; flex-direction: column; align-items: center; padding: 20px; color: #333; }
-        
-        /* 설정 영역 */
-        .setup-box { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 20px; width: 700px; border: 3px solid var(--main-color); }
-        .input-group { margin: 10px 0; display: flex; align-items: center; gap: 10px; font-weight: bold; }
-        input, select { padding: 8px; border: 2px solid #ddd; border-radius: 8px; }
-        
-        /* 연표 캔버스 영역 */
-        #capture-area { background: white; padding: 60px 40px; border-radius: 25px; width: 750px; min-height: 850px; border: 1px solid #eee; position: relative; }
-        .title-area { text-align: center; margin-bottom: 50px; }
-        .title-area h1 { font-size: 2.8em; color: var(--point-color); margin: 0; border-bottom: 4px double var(--main-color); display: inline-block; padding-bottom: 5px; }
-        
-        .timeline-line { position: absolute; left: 150px; top: 180px; bottom: 80px; width: 6px; background: var(--main-color); border-radius: 3px; }
-        
-        .timeline-list { position: relative; z-index: 2; list-style: none; padding: 0; margin: 0; }
-        .item { display: flex; align-items: center; margin-bottom: 35px; min-height: 50px; transition: all 0.5s ease; }
-        
-        .year-side { width: 140px; text-align: right; padding-right: 35px; font-weight: bold; color: var(--point-color); font-size: 1.4em; position: relative; }
-        .year-side::after { content: ''; position: absolute; right: -12px; top: 50%; transform: translateY(-50%); width: 22px; height: 22px; background: white; border: 5px solid var(--point-color); border-radius: 50%; z-index: 3; }
-        
-        .content-side { flex: 1; padding-left: 30px; display: flex; align-items: center; gap: 10px; }
-        .age-tag { background: #ffeeba; padding: 4px 10px; border-radius: 12px; font-size: 0.9em; font-weight: bold; color: #d45d00; min-width: 45px; text-align: center; }
-        .event-text { font-size: 1.2em; border: none; border-bottom: 1px solid #eee; padding: 5px; flex: 1; outline: none; }
-        .emoji-select { font-size: 1.1em; padding: 5px; border-radius: 8px; border: 2px solid var(--main-color); cursor: pointer; }
+        :root {
+            --primary-color: #4a90e2;
+            --accent-color: #ff9f43;
+            --bg-color: #f4f6f9;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --border-color: #dddddd;
+        }
 
-        /* 하단 제어 버튼 */
-        .controls { margin-top: 20px; display: flex; gap: 15px; }
-        .btn { padding: 12px 25px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        .btn-add { background: #4CAF50; color: white; }
-        .btn-save { background: var(--point-color); color: white; font-size: 1.1em; }
-        .btn:disabled { background: #ccc; cursor: not-allowed; }
-        .btn-del { border:none; background:none; cursor:pointer; font-size: 1.2em; color: #ff4444; }
+        body {
+            font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 750px;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            margin-bottom: 25px;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-top: 0;
+            margin-bottom: 8px;
+            font-size: 28px;
+        }
+
+        .description {
+            text-align: center;
+            color: #666;
+            margin-bottom: 25px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .input-field {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .input-field label {
+            font-weight: bold;
+            font-size: 14px;
+            color: #444;
+        }
+
+        input[type="text"], input[type="number"] {
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 15px;
+            outline: none;
+        }
+
+        input[type="text"]:focus, input[type="number"]:focus {
+            border-color: var(--primary-color);
+        }
+
+        .timeline-inputs {
+            margin-bottom: 20px;
+            border-top: 1px dashed var(--border-color);
+            padding-top: 20px;
+        }
+
+        .timeline-input-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+            align-items: center;
+        }
+
+        .row-num {
+            font-weight: bold;
+            color: #aaa;
+            width: 25px;
+            text-align: center;
+        }
+
+        .input-year {
+            width: 110px;
+        }
+
+        .input-content {
+            flex: 1;
+        }
+
+        .btn-delete {
+            background-color: #ff4d4d;
+            color: white;
+            border: none;
+            padding: 10px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .btn-delete:hover {
+            background-color: #e60000;
+        }
+
+        .button-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        button.btn-main {
+            padding: 12px 20px;
+            font-size: 15px;
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        button.btn-main:active {
+            transform: scale(0.98);
+        }
+
+        .btn-add {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        .btn-add:hover {
+            background-color: #e68a2e;
+        }
+
+        .btn-generate {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-generate:hover {
+            background-color: #357abd;
+        }
+
+        .btn-save {
+            background-color: #2ed573;
+            color: white;
+        }
+
+        .btn-save:hover {
+            background-color: #26af5f;
+        }
+
+        /* 연표 출력 및 캡처 영역 */
+        .preview-container {
+            width: 100%;
+            max-width: 750px;
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.04);
+            border: 2px dashed #cbd5e1;
+            box-sizing: border-box;
+        }
+
+        .preview-header {
+            text-align: center;
+            margin-bottom: 35px;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 15px;
+        }
+
+        .preview-title {
+            font-size: 30px;
+            margin: 0 0 10px 0;
+            color: #1a1a1a;
+        }
+
+        .preview-subtitle {
+            font-size: 16px;
+            color: #555;
+            margin: 0;
+            font-weight: 500;
+        }
+
+        .timeline-visual {
+            position: relative;
+            padding: 10px 0;
+        }
+
+        .timeline-line {
+            position: absolute;
+            left: 140px;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background-color: var(--primary-color);
+        }
+
+        .timeline-event {
+            position: relative;
+            margin-bottom: 35px;
+            display: flex;
+            align-items: center;
+        }
+
+        .timeline-event:last-child {
+            margin-bottom: 0;
+        }
+
+        .event-year {
+            width: 120px;
+            text-align: right;
+            font-size: 22px;
+            font-weight: bold;
+            color: var(--primary-color);
+            padding-right: 20px;
+            box-sizing: border-box;
+        }
+
+        .event-dot {
+            position: absolute;
+            left: 133px; /* 선 중심 정렬 계산 규칙 */
+            width: 10px;
+            height: 10px;
+            background-color: white;
+            border: 4px solid var(--accent-color);
+            border-radius: 50%;
+            z-index: 2;
+        }
+
+        .event-content {
+            flex: 1;
+            padding-left: 30px;
+            font-size: 18px;
+            color: #2c3e50;
+            line-height: 1.5;
+            word-break: break-all;
+        }
+        
+        .no-data {
+            text-align: center;
+            color: #999;
+            font-size: 16px;
+            padding: 40px 0;
+        }
     </style>
 </head>
 <body>
 
-    <div class="setup-box">
+    <div class="container">
+        <h1>🏫 우리 학교 역사 연표 제작기</h1>
+        <div class="description">(연도 순서에 상관없이 입력하면 자동으로 정렬됩니다!)</div>
+
         <div class="input-group">
-            <span>내 이름:</span>
-            <input type="text" id="nameInput" placeholder="이름을 입력하세요" oninput="updateUI()">
-            <span>(연도 순서에 상관없이 입력하면 자동으로 정렬됩니다!)</span>
+            <div class="input-field">
+                <label for="school-name">학교 이름</label>
+                <input type="text" id="school-name" placeholder="예: 신양초등학교" oninput="updatePreviewHeader()">
+            </div>
+            <div class="input-field">
+                <label for="author-name">학년 / 반 / 이름</label>
+                <input type="text" id="author-name" placeholder="예: 3학년 1반 홍길동" oninput="updatePreviewHeader()">
+            </div>
+        </div>
+
+        <div class="timeline-inputs" id="inputs-container">
+            </div>
+
+        <div class="button-actions">
+            <button class="btn-main btn-add" onclick="addInputRow()">➕ 항목 추가 (최대 10개)</button>
+            <button class="btn-main btn-generate" onclick="generateTimeline()">⚙️ 연표 정렬 및 생성</button>
+            <button class="btn-main btn-save" onclick="saveAsImage()">📸 사진 파일로 저장하기</button>
         </div>
     </div>
 
-    <div id="capture-area">
-        <div class="title-area">
-            <h1><span id="displayName">OOO</span>네 가족 연표</h1>
+    <div class="preview-container" id="preview-area">
+        <div class="preview-header">
+            <h2 class="preview-title" id="view-title">🏫 우리 학교 역사 연표</h2>
+            <p class="preview-subtitle" id="view-author">작성자: </p>
         </div>
-        
-        <div class="timeline-line"></div>
-        <div id="timeline-list" class="timeline-list">
-            <!-- 항목들이 정렬되어 나타납니다 -->
+        <div class="timeline-visual" id="timeline-render-target">
+            <div class="no-data">내용을 입력하고 [연표 정렬 및 생성] 버튼을 눌러보세요!</div>
         </div>
-    </div>
-
-    <div class="controls">
-        <button class="btn btn-add" id="addBtn" onclick="addRow()">➕ 항목 추가하기 (최대 10개)</button>
-        <button class="btn btn-save" onclick="saveImage()">📸 사진 파일로 저장하기</button>
     </div>
 
     <script>
-        const timelineList = document.getElementById('timeline-list');
-        const emotions = [
-            { icon: "😊", label: "기쁨" }, { icon: "😭", label: "슬픔" },
-            { icon: "😡", label: "화남" }, { icon: "😮", label: "놀람" },
-            { icon: "🥰", label: "사랑" }, { icon: "😎", label: "뿌듯" },
-            { icon: "😰", label: "걱정" }, { icon: "😴", label: "평온" }
-        ];
+        let rowCount = 0;
+        const maxRows = 10;
 
-        let dataList = []; // 데이터를 저장할 리스트
+        // 시작할 때 기본으로 3개의 입력 칸을 띄워줍니다.
+        window.onload = function() {
+            for(let i = 0; i < 3; i++) {
+                addInputRow();
+            }
+        };
 
-        function updateUI() {
-            document.getElementById('displayName').innerText = document.getElementById('nameInput').value || "OOO";
+        function addInputRow() {
+            const container = document.getElementById('inputs-container');
+            if (rowCount >= maxRows) {
+                alert('항목은 최대 10개까지만 추가할 수 있습니다.');
+                return;
+            }
+
+            rowCount++;
+            const row = document.createElement('div');
+            row.className = 'timeline-input-row';
+            row.id = `row-${rowCount}`;
+            row.innerHTML = `
+                <span class="row-num">${rowCount}</span>
+                <input type="number" class="input-year" placeholder="연도 (예: 1945)" onkeypress="if(event.keyCode===13) generateTimeline()">
+                <input type="text" class="input-content" placeholder="학교의 중요 사건이나 변화를 적어보세요." onkeypress="if(event.keyCode===13) generateTimeline()">
+                <button class="btn-delete" onclick="deleteRow(${rowCount})">삭제</button>
+            `;
+            container.appendChild(row);
+            renumberRows();
         }
 
-        // 연표 항목 추가
-        function addRow() {
-            if (dataList.length >= 10) return;
-
-            const newItem = {
-                id: Date.now(),
-                year: 2026,
-                event: "",
-                emoji: "😊"
-            };
-
-            dataList.push(newItem);
-            renderTimeline();
-            checkBtn();
-        }
-
-        // 연표 다시 그리기 (정렬 포함)
-        function renderTimeline() {
-            // 연도 순서대로 정렬 (오름차순)
-            dataList.sort((a, b) => a.year - b.year);
-
-            timelineList.innerHTML = ""; // 기존 목록 비우기
-
-            dataList.forEach((item) => {
-                const row = document.createElement('div');
-                row.className = 'item';
-                
-                // 연도 선택 옵션 생성
-                let yearOptions = "";
-                for (let y = 2000; y <= 2026; y++) {
-                    let selected = (y === item.year) ? "selected" : "";
-                    yearOptions += `<option value="${y}" ${selected}>${y}년</option>`;
-                }
-
-                // 감정 선택 옵션 생성
-                let emotionOptions = emotions.map(e => `<option value="${e.icon}" ${item.emoji === e.icon ? 'selected' : ''}>${e.icon} ${e.label}</option>`).join('');
-
-                // 나이 계산
-                let ageHtml = "";
-                if (item.year >= 2017 && item.year <= 2026) {
-                    ageHtml = `<span class="age-tag">${item.year - 2017 + 1}살</span>`;
-                }
-
-                row.innerHTML = `
-                    <div class="year-side">
-                        <select onchange="updateItem(${item.id}, 'year', this.value)">${yearOptions}</select>
-                    </div>
-                    <div class="content-side">
-                        ${ageHtml}
-                        <input type="text" class="event-text" value="${item.event}" placeholder="소중한 일을 적어보세요" oninput="updateItem(${item.id}, 'event', this.value)">
-                        <select class="emoji-select" onchange="updateItem(${item.id}, 'emoji', this.value)">${emotionOptions}</select>
-                        <button class="btn-del" onclick="removeItem(${item.id})">🗑️</button>
-                    </div>
-                `;
-                timelineList.appendChild(row);
-            });
-        }
-
-        // 데이터 수정 시 호출
-        function updateItem(id, field, value) {
-            const item = dataList.find(d => d.id === id);
-            if (item) {
-                item[field] = (field === 'year') ? parseInt(value) : value;
-                if (field === 'year') {
-                    renderTimeline(); // 연도가 바뀌면 다시 정렬해서 그리기
-                }
+        function deleteRow(id) {
+            const row = document.getElementById(`row-${id}`);
+            if (row) {
+                row.remove();
+                renumberRows();
             }
         }
 
-        // 항목 삭제
-        function removeItem(id) {
-            dataList = dataList.filter(d => d.id !== id);
-            renderTimeline();
-            checkBtn();
-        }
-
-        function checkBtn() {
-            document.getElementById('addBtn').disabled = (dataList.length >= 10);
-        }
-
-        function saveImage() {
-            const saveBtn = document.querySelector('.btn-save');
-            saveBtn.innerText = "이미지 생성 중...";
-            
-            html2canvas(document.querySelector("#capture-area"), {
-                backgroundColor: "#ffffff",
-                scale: 2
-            }).then(canvas => {
-                const link = document.createElement('a');
-                const name = document.getElementById('nameInput').value || '우리';
-                link.download = `${name}_네_가족_연표.png`;
-                link.href = canvas.toDataURL();
-                link.click();
-                saveBtn.innerText = "📸 사진 파일로 저장하기";
+        function renumberRows() {
+            const rows = document.querySelectorAll('.timeline-input-row');
+            rowCount = rows.length;
+            rows.forEach((row, index) => {
+                const currentNum = index + 1;
+                row.id = `row-${currentNum}`;
+                row.querySelector('.row-num').innerText = currentNum;
+                row.querySelector('.btn-delete').setAttribute('onclick', `deleteRow(${currentNum})`);
             });
         }
 
-        // 초기 항목 생성
-        addRow();
+        function updatePreviewHeader() {
+            const schoolName = document.getElementById('school-name').value.trim();
+            const authorName = document.getElementById('author-name').value.trim();
+
+            document.getElementById('view-title').innerText = schoolName ? `🏫 ${schoolName} 역사 연표` : "🏫 우리 학교 역사 연표";
+            document.getElementById('view-author').innerText = authorName ? `작성자: ${authorName}` : "작성자: ";
+        }
+
+        function generateTimeline() {
+            const rows = document.querySelectorAll('.timeline-input-row');
+            let events = [];
+
+            rows.forEach(row => {
+                const yearVal = row.querySelector('.input-year').value.trim();
+                const contentVal = row.querySelector('.input-content').value.trim();
+
+                if (yearVal && contentVal) {
+                    events.push({
+                        year: parseInt(yearVal, 10),
+                        content: contentVal
+                    });
+                }
+            });
+
+            // 연도 기준 오름차순(과거->현재) 정렬
+            events.sort((a, b) => a.year - b.year);
+
+            const renderTarget = document.getElementById('timeline-render-target');
+            
+            if (events.length === 0) {
+                renderTarget.innerHTML = `<div class="no-data">내용을 입력하고 [연표 정렬 및 생성] 버튼을 눌러주세요!</div>`;
+                return;
+            }
+
+            let html = `<div class="timeline-line"></div>`;
+            events.forEach(ev => {
+                html += `
+                    <div class="timeline-event">
+                        <div class="event-year">${ev.year}년</div>
+                        <div class="event-dot"></div>
+                        <div class="event-content">${ev.content}</div>
+                    </div>
+                `;
+            });
+
+            renderTarget.innerHTML = html;
+            updatePreviewHeader();
+        }
+
+        function saveAsImage() {
+            // 저장 전 혹시 모를 누락 방지를 위해 연표를 다시 한번 최종 생성합니다.
+            generateTimeline();
+
+            const previewArea = document.getElementById('preview-area');
+            const schoolName = document.getElementById('school-name').value.trim() || '우리학교';
+
+            // 이미지 화질을 높이기 위한 옵션 설정
+            const options = {
+                scale: 2, 
+                backgroundColor: "#ffffff",
+                useCORS: true
+            };
+
+            html2canvas(previewArea, options).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `${schoolName}_역사_연표.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            }).catch(err => {
+                console.error('이미지 파일 저장 오류:', err);
+                alert('이미지 파일로 변환하는 중 오류가 발생했습니다. 크롬이나 웨일 브라우저를 이용해 주세요.');
+            });
+        }
     </script>
 </body>
 </html>
